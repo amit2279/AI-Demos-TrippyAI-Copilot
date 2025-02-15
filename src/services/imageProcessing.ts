@@ -152,13 +152,10 @@ function parseCoordinates(coordinates: string | unknown): [number, number] | nul
   }
 }
 
-const API_URL = process.env.NODE_ENV === 'production'
-  ? '/api/chat'
-  : 'http://localhost:3000/api/chat';
+const API_URL = '/api/chat';
 
-
-  export async function processLocationImages(images: File[]): Promise<Location[]> {
-    console.log(`[Image Processing] Processing ${images.length} images`);
+export async function processLocationImages(images: File[]): Promise<Location[]> {
+  console.log(`[Image Processing] Processing ${images.length} images`);
   const locations: Location[] = [];
   
   for (const image of images) {
@@ -194,7 +191,8 @@ const API_URL = process.env.NODE_ENV === 'production'
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Add credentials mode
+        mode: 'cors',
+        credentials: 'omit',
         body: JSON.stringify({
           messages: [{
             role: 'user',
@@ -215,32 +213,6 @@ const API_URL = process.env.NODE_ENV === 'production'
           }]
         })
       });
-
-      /* const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors', // Explicitly set CORS mode
-        credentials: 'omit', // Don't send credentials
-        body: JSON.stringify({
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Identify this location. Respond with ONLY a JSON object in this format: {"name": "Location Name", "city": "City Name", "country": "Country", "coordinates": "DD.DDDD°N/S, DDD.DDDD°E/W", "description": "Brief description"}'
-              },
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: 'image/jpeg',
-                  data: base64Image.split(',')[1]
-                }
-              }
-            ]
-          }]
-        })
-      }); */
 
       if (!response.ok) throw new Error(`API error: ${response.status}`);
 
@@ -291,15 +263,16 @@ const API_URL = process.env.NODE_ENV === 'production'
       }
 
       const [lat, lng] = coords;
-      
-      // Create location object with city and description
       locations.push({
         id: `loc-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         name: locationData.name,
-        city: cityName,
         country: locationData.country,
         position: { lat, lng },
-        description: locationData.description || `Visit ${locationData.name}`
+        imageUrl: base64Image,
+        city: cityName,
+        description: locationData.description,
+        rating: 4.5,
+        reviews: Math.floor(Math.random() * 40000) + 10000
       });
 
     } catch (error) {
