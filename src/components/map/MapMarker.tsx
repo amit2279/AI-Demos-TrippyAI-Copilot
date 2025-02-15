@@ -150,7 +150,7 @@ export const MapMarkers: React.FC<MapMarkersProps> = ({
                       className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                     >
                       <ExternalLink size={14} />
-                      Open in Maps
+                      Open in Maps 
                     </button>
                   </div>
                 </div>

@@ -94,7 +94,7 @@ export const EarthPopup: React.FC<EarthPopupProps> = ({
               className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
             >
               <MapPin size={14} />
-              Open in Maps
+              Open in Maps 
             </button>
           </div>
         </div>

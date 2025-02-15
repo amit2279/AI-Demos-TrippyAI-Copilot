@@ -375,6 +375,7 @@ const CHAT_SYSTEM_PROMPT = `You are a knowledgeable travel assistant. For ALL lo
    - If query contains "weather", "temperature", "climate", "forecast":
    - ONLY respond with: "Let me check the current weather in [City]..."
    - Extract ONLY the city name from the query
+   - ALWAYS be concise in your responses, focusing on key information without unnecessary long text or verbosity
    - DO NOT provide any weather information or forecasts
    - DO NOT include ANY JSON data
 
@@ -486,6 +487,7 @@ app.post('/api/chat', async (req, res) => {
         max_tokens: 4096,
         messages: validMessages,
         system: CHAT_SYSTEM_PROMPT,
+        temperature: 0.2,
         stream: true
       });
 

@@ -14,6 +14,7 @@ export interface Location {
   };
   rating: number;
   reviews: number;
+  city: string;
   imageUrl: string;
   description?: string;
 }

@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { LocationRecommendation } from './LocationRecommendation';
 import { processStreamingMessage } from '../services/chat/messageProcessor';
 import { DefaultWeatherWidget } from './weather/DefaultWeatherWidget';
+import { cityContext } from '../services/cityContext';
 
 interface ChatMessageProps {
   message: Message;
@@ -13,6 +14,26 @@ interface ChatMessageProps {
   onLocationsUpdate: (locations: Location[]) => void;
   onLocationSelect: (location: Location) => void;
   selectedLocation: Location | null;
+}
+
+function extractCityName(location: Location): string {
+  // If city is directly provided, use it
+  if (location.city) {
+    return location.city.trim();
+  }
+
+  // Otherwise extract from location name
+  const parts = location.name.split(',');
+  
+  // If multiple parts, use the first part as it's likely the city
+  if (parts.length > 1) {
+    return parts[0].trim()
+      .replace(/^(in|at|near|the)\s+/i, '')
+      .replace(/\s+(area|district|region)$/i, '');
+  }
+  
+  // If single part, use it as is
+  return parts[0].trim();
 }
 
 export function ChatMessage({ 
@@ -28,16 +49,6 @@ export function ChatMessage({
   const [weatherLocation, setWeatherLocation] = useState<string | null>(null);
   const isBot = message.sender === 'bot';
   const processedRef = useRef(false);
-
-  // Debug logging for props changes
-  useEffect(() => {
-    console.log('[ChatMessage] Props updated:', {
-      messageId: message.id,
-      content: message.content?.substring(0, 100),
-      isStreaming,
-      selectedLocation: selectedLocation?.name
-    });
-  }, [message, isStreaming, selectedLocation]);
 
   useEffect(() => {
     // Reset processed state when message changes
@@ -58,6 +69,8 @@ export function ChatMessage({
 
     try {
       const { textContent, jsonContent, weatherLocation } = processStreamingMessage(message.content);
+      
+      // Only show text content, never raw JSON
       setDisplayContent(textContent || (isStreaming ? 'Thinking...' : ''));
       
       if (weatherLocation) {
@@ -65,7 +78,7 @@ export function ChatMessage({
         return; // Don't process locations for weather messages
       }
 
-      // Process locations if JSON content exists, not streaming, and not already processed
+      // Process locations if JSON content exists and not streaming
       if (jsonContent && !isStreaming && !processedRef.current) {
         try {
           const data = JSON.parse(jsonContent);
@@ -75,6 +88,8 @@ export function ChatMessage({
               .map((loc: any, index: number) => ({
                 id: `loc-${Date.now()}-${index}`,
                 name: loc.name,
+                city: loc.city,
+                country: loc.country,
                 position: {
                   lat: Number(loc.coordinates[0]),
                   lng: Number(loc.coordinates[1])
@@ -85,20 +100,17 @@ export function ChatMessage({
                 description: loc.description || ''
               }));
 
-            // Only set locations if we have valid ones
             if (processedLocations.length > 0) {
-              console.log('[ChatMessage] Processing new locations:', processedLocations);
+              // Update city context with first location
+              const cityName = extractCityName(processedLocations[0]);
+              cityContext.setCurrentCity(cityName);
               
-              // Update parent component
+              // Update locations
               onLocationsUpdate(processedLocations);
-              
-              // Update local state
               setLocations(processedLocations);
-              
-              // Mark as processed to prevent duplicate processing
               processedRef.current = true;
-              
-              // Select first location after a delay to ensure map is ready
+
+              // Show locations after a delay
               setTimeout(() => {
                 setShowLocations(true);
                 onLocationSelect(processedLocations[0]);
@@ -116,13 +128,6 @@ export function ChatMessage({
     }
   }, [message, isStreaming, onLocationSelect, onLocationsUpdate, displayContent]);
 
-  // Debug logging for locations updates
-  useEffect(() => {
-    if (locations.length > 0) {
-      console.log('[ChatMessage] Locations state updated:', locations);
-    }
-  }, [locations]);
-
   return (
     <div className="space-y-4">
       <div className={`flex gap-3 ${isBot ? 'flex-row' : 'flex-row-reverse'}`}>
@@ -137,7 +142,6 @@ export function ChatMessage({
         </div>
         
         <div className="max-w-[100%] space-y-4 relative">
-          {/* Image Preview */}
           {message.type === 'image' && message.imageUrl && (
             <div className="rounded-lg overflow-hidden max-w-[200px]">
               <img 
@@ -148,7 +152,6 @@ export function ChatMessage({
             </div>
           )}
 
-          {/* Message Content */}
           {displayContent && (
             <div className={`rounded-lg p-3 ${isBot ? 'bg-gray-100' : 'bg-blue-50'}`}>
               <div className="prose prose-sm max-w-none">
@@ -165,7 +168,6 @@ export function ChatMessage({
             </div>
           )}
 
-          {/* Weather Widget */}
           {isBot && weatherLocation && !isStreaming && (
             <div className="rounded-lg">
               <DefaultWeatherWidget location={weatherLocation} />
@@ -174,7 +176,6 @@ export function ChatMessage({
         </div>
       </div>
 
-      {/* Location Cards */}
       {isBot && locations.length > 0 && showLocations && (
         <div className="ml-11 space-y-2">
           {locations.map((location, index) => (
