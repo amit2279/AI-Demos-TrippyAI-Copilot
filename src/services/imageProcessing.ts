@@ -2,8 +2,8 @@ import { Location, Message } from '../types/chat';
 import { cityContext } from './cityContext';
 
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB max after processing
-const MAX_DIMENSION = 800; // Maximum dimension
-const JPEG_QUALITY = 0.7; // JPEG quality
+const MAX_DIMENSION = 300; // Maximum dimension
+const JPEG_QUALITY = 0.5; // JPEG quality
 
 // Add processing state tracking
 const processingImages = new Set<string>();
