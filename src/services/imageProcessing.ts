@@ -248,13 +248,12 @@ export async function processLocationImages(images: File[]): Promise<Location[]>
         name: locationData.name,
         country: locationData.country,
         position: { lat, lng },
-        imageUrl: base64Image,
         city: cityName,
         description: locationData.description,
         rating: 4.5,
         reviews: Math.floor(Math.random() * 40000) + 10000
       });
-
+      //imageUrl: base64Image,
     } catch (error) {
       console.error(`[Image Processing] Error:`, error);
     } finally {
